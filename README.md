@@ -1,41 +1,25 @@
 # AutoEvolve
 
-AutoEvolve is a full-stack autonomous publishing and SEO system.
+AutoEvolve is a multi-tenant Laravel/MySQL SaaS for autonomous content publishing, SEO improvement, versioned AI revisions, opportunity discovery, usage metering, subscriptions, hosted customer sites, and super-admin operations.
 
-## Architecture
+## Production architecture
 
-- **Next.js 16 / Vercel** — public website, articles, metadata, sitemap and graceful frontend fallback.
-- **Laravel 13 / PHP 8.3+** — complete admin panel, authentication, content CRUD, AI engine, opportunity discovery, version history and scheduler.
-- **MySQL** — the single production persistence layer for admin users, content, content versions, AI actions, opportunities and site settings.
-- **DeepSeek/OpenAI-compatible provider** — optional AI generation and improvement through the Laravel backend only.
+- Laravel 13 backend + SaaS/customer/admin UI
+- MySQL as the production source of truth
+- Stripe subscriptions and plan enforcement
+- OpenAI-compatible AI provider (DeepSeek by default)
+- Laravel scheduler + database queue
+- Optional Next.js/Vercel marketing/public frontend
+- cPanel-ready release package built by GitHub Actions
 
-The public frontend never receives database credentials or the AI key.
+## cPanel install
 
-## Frontend
+Use the `Build cPanel Package` GitHub Actions artifact (`autoevolve-cpanel.zip`) rather than GitHub's generic source ZIP. The artifact includes Composer production dependencies.
 
-```bash
-npm install
-cp .env.example .env.local
-npm run dev
-```
+1. Extract outside the public web root.
+2. Point the domain/subdomain document root to `public/`.
+3. Open `/install.php`.
+4. Enter MySQL, administrator, AI, Stripe, and SMTP settings.
+5. Add the scheduler cron from `INSTALL.md`.
 
-Set the Laravel backend URL in `BACKEND_URL` and `NEXT_PUBLIC_BACKEND_URL`.
-
-## Laravel backend
-
-See [`backend/README.md`](backend/README.md).
-
-```bash
-cd backend
-composer install
-cp .env.example .env
-php artisan key:generate
-php artisan autoevolve:install --email=you@example.com --password='strong-password'
-php artisan serve
-```
-
-Then visit `/admin/login` on the Laravel backend.
-
-## Production database security
-
-Do not commit database usernames/passwords or API keys. Configure them as environment variables on the PHP/Laravel host. Production defaults to MySQL.
+See `backend/INSTALL.md` and `backend/README-FIRST.txt` for the full deployment guide.
