@@ -61,9 +61,9 @@ class SaasCoreTest extends TestCase
         $site->update(['domain'=>'alpha.example.com']);
         ContentItem::create(['workspace_id'=>$workspace->id,'site_id'=>$site->id,'title'=>'Domain Guide','slug'=>'domain-guide','status'=>'published','body'=>[],'published_at'=>now()]);
 
-        $host = ['HTTP_HOST'=>'alpha.example.com','SERVER_NAME'=>'alpha.example.com','SERVER_PORT'=>'80'];
-        $this->withServerVariables($host)->get('/')->assertOk()->assertSee('Domain Guide');
-        $this->withServerVariables($host)->get('/sitemap.xml')->assertOk()->assertSee('domain-guide');
+        $this->withHeader('Host','alpha.example.com')->get('/')->assertOk()->assertSee('Domain Guide');
+        $this->withHeader('Host','alpha.example.com')->get('/sitemap.xml')->assertOk()->assertSee('domain-guide');
+        $this->withHeader('Host','alpha.example.com')->get('/domain-guide')->assertOk()->assertSee('Domain Guide');
     }
 
     public function test_expired_trial_without_subscription_cannot_consume_ai(): void
