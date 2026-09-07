@@ -1,0 +1,7 @@
+@extends('layouts.admin')
+@section('title','System health')
+@section('content')
+<div class="page-head"><div><span class="eyebrow">OPERATIONS</span><h1>System health</h1><p class="muted">Production readiness checks. Secret values are never shown here.</p></div><a class="button secondary" href="{{ url('/setup') }}">Public setup check</a></div>
+<div class="two-col"><section class="panel"><h2>Readiness</h2>@foreach($checks as $label=>$ok)<div class="check-row"><span>{{ $label }}</span><strong class="{{ $ok?'ok':'bad' }}">{{ $ok?'✓ Ready':'✕ Needs attention' }}</strong></div>@endforeach</section><section class="panel"><h2>Runtime</h2>@foreach($runtime as $label=>$value)<div class="check-row"><span>{{ $label }}</span><strong>{{ $value }}</strong></div>@endforeach</section></div>
+<section class="panel"><h2>Production checklist</h2><div class="cards"><div class="card"><h3>Cron</h3><p>Run <span class="code">php artisan schedule:run</span> every minute so autonomous evolution executes.</p></div><div class="card"><h3>Queue</h3><p>Use Supervisor when available, or a cPanel cron with <span class="code">queue:work --stop-when-empty</span>.</p></div><div class="card"><h3>Backups</h3><p>Back up the MySQL database, private <span class="code">.env</span>, and storage directory. Keep APP_DEBUG disabled.</p></div></div></section>
+@endsection

@@ -9,7 +9,7 @@ class MarketingController extends Controller
 {
     public function home(Request $request)
     {
-        $site = Site::where('domain', $request->getHost())->where('status', 'active')->first();
+        $site = Site::where('domain', strtolower($request->getHost()))->where('status', 'active')->first();
         if ($site) {
             $items = $site->content()->where('status', 'published')->orderByDesc('published_at')->limit(12)->get();
             return view('public.site-home', compact('site', 'items'));

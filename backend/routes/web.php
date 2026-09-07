@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [MarketingController::class,'home'])->name('home');
+Route::get('/sitemap.xml', [PublicSiteController::class,'customDomainSitemap'])->name('front.sitemap');
+Route::get('/robots.txt', [PublicSiteController::class,'robots'])->name('front.robots');
 Route::get('/privacy', [MarketingController::class,'privacy'])->name('privacy');
 Route::get('/terms', [MarketingController::class,'terms'])->name('terms');
 
@@ -93,17 +95,27 @@ Route::prefix('app')->middleware(['auth','workspace'])->group(function(){
     Route::post('/settings/api-keys/{apiKey}/revoke',[SettingsController::class,'revokeApiKey'])->middleware('workspace.role:owner,admin')->name('app.settings.api-keys.revoke');
 });
 
-Route::get('/s/{site:slug}',[PublicSiteController::class,'index'])->name('public.site');
-Route::get('/s/{site:slug}/sitemap.xml',[PublicSiteController::class,'sitemap'])->name('public.sitemap');
-Route::get('/s/{site:slug}/{slug}',[PublicSiteController::class,'show'])->name('public.article');
+Route::scopeBindings()->group(function(){
+    Route::get('/s/{workspace:slug}/{site:slug}',[PublicSiteController::class,'index'])->name('public.site');
+    Route::get('/s/{workspace:slug}/{site:slug}/sitemap.xml',[PublicSiteController::class,'sitemap'])->name('public.sitemap');
+    Route::get('/s/{workspace:slug}/{site:slug}/{slug}',[PublicSiteController::class,'show'])->name('public.article');
+});
 
 Route::get('/admin/login',[AuthController::class,'showLogin'])->name('admin.login');
 Route::post('/admin/login',[AuthController::class,'login'])->middleware('throttle:10,1')->name('admin.login.submit');
 Route::post('/admin/logout',[AuthController::class,'logout'])->name('admin.logout');
 Route::prefix('admin')->middleware(['auth','admin'])->group(function () {
     Route::get('/',[SaasController::class,'index'])->name('admin.dashboard');
+    Route::get('/users',[SaasController::class,'users'])->name('admin.users');
+    Route::get('/sites',[SaasController::class,'sites'])->name('admin.sites');
+    Route::get('/subscriptions',[SaasController::class,'subscriptions'])->name('admin.subscriptions');
+    Route::get('/usage',[SaasController::class,'usage'])->name('admin.usage');
+    Route::get('/activity',[SaasController::class,'activity'])->name('admin.activity');
+    Route::get('/system',[SaasController::class,'system'])->name('admin.system');
     Route::get('/workspaces/{workspace}',[SaasController::class,'show'])->name('admin.workspaces.show');
     Route::post('/workspaces/{workspace}/toggle',[SaasController::class,'toggle'])->name('admin.workspaces.toggle');
+    Route::put('/workspaces/{workspace}/plan',[SaasController::class,'updatePlan'])->name('admin.workspaces.plan');
+    Route::post('/sites/{site}/toggle',[SaasController::class,'toggleSite'])->name('admin.sites.toggle');
 });
 
 // Custom-domain article route. Specific application/marketing routes above always win first.

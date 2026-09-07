@@ -56,8 +56,8 @@ jobs:
           name: composer-install-log
           path: backend/composer-install.log
       - name: PHP syntax check
-        run: find app config database routes public -name '*.php' -print0 | xargs -0 -n1 php -l
-      - name: Laravel MySQL boot, migrations, routes and views
+        run: find app config database routes public tests -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Laravel MySQL boot, migrations, routes, views and feature tests
         env:
           APP_ENV: testing
           APP_KEY: base64:ZHVtbXktMzItYnl0ZS1hcHAta2V5LWZvci1jaQ==
@@ -70,8 +70,8 @@ jobs:
           DB_USERNAME: autoevolve_ci
           DB_PASSWORD: ci_password_only
           SESSION_DRIVER: database
-          CACHE_STORE: database
-          QUEUE_CONNECTION: database
+          CACHE_STORE: array
+          QUEUE_CONNECTION: sync
           MAIL_MAILER: array
         run: |
           php artisan migrate:fresh --force
@@ -79,3 +79,4 @@ jobs:
           php artisan route:list
           php artisan view:cache
           php artisan about
+          php artisan test
