@@ -13,11 +13,14 @@ DB_PORT=3306
 DB_DATABASE=your_database_name
 DB_USERNAME=your_database_user
 DB_PASSWORD=your_secret_password
+SESSION_DRIVER=database
+CACHE_STORE=database
+QUEUE_CONNECTION=database
 ```
 
 If Laravel and MySQL are on the same cPanel account, `DB_HOST=localhost` is normally correct. If the backend is hosted elsewhere, use the database provider's remote MySQL hostname and allow that backend server to connect.
 
-All persistent application data lives in MySQL: admin users, content, versions, AI actions, opportunities and site settings.
+All persistent application and runtime state lives in MySQL: admin users, sessions, cache, queued jobs, failed jobs, content, content versions, AI actions, opportunities and site settings.
 
 ## Install
 
@@ -61,4 +64,4 @@ BACKEND_URL=https://your-laravel-backend.example.com
 NEXT_PUBLIC_BACKEND_URL=https://your-laravel-backend.example.com
 ```
 
-The public Next.js site reads published content from Laravel. It does not connect directly to MySQL.
+The public Next.js site reads published content from Laravel. It never connects directly to MySQL and never receives database credentials.
