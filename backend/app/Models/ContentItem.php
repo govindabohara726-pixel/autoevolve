@@ -21,4 +21,6 @@ class ContentItem extends Model
     public function site(){ return $this->belongsTo(Site::class); }
     public function versions(): HasMany { return $this->hasMany(ContentVersion::class); }
     public function actions(): HasMany { return $this->hasMany(AiAction::class); }
+    public function revisions(): HasMany { return $this->hasMany(ContentRevision::class); }
+    public function pendingRevisions(): HasMany { return $this->revisions()->where('status','pending'); }
 }
