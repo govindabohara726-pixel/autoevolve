@@ -12,7 +12,7 @@ export type ContentBody = {
 
 export type ContentItem = {
   id: string;
-  site_id: string;
+  site_id?: string;
   title: string;
   slug: string;
   excerpt: string | null;

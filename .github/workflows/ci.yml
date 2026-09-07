@@ -6,28 +6,29 @@ on:
   pull_request:
 
 jobs:
-  build:
+  frontend:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
-      - name: Typecheck
-        run: npm run typecheck
-      - name: Production build
-        shell: bash
-        run: |
-          set -o pipefail
-          npm run build 2>&1 | tee build.log
-      - name: Upload build log
-        if: always()
-        uses: actions/upload-artifact@v4
+      - run: npm install --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm run build
+
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
         with:
-          name: build-log
-          path: build.log
-          if-no-files-found: ignore
+          php-version: '8.3'
+          extensions: pdo_mysql, mbstring, openssl, tokenizer, xml, ctype, json, bcmath
+          coverage: none
+      - run: composer validate --no-check-publish
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: find app config database routes -name '*.php' -print0 | xargs -0 -n1 php -l

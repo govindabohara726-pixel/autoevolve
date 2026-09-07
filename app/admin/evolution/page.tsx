@@ -1,13 +1,1 @@
-import { redirect } from "next/navigation";
-import { ApproveButton } from "@/components/AdminActions";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { hasSupabaseAdminConfig } from "@/lib/config";
-
-export const dynamic = "force-dynamic";
-
-export default async function Evolution(){
-  if(!hasSupabaseAdminConfig()) redirect("/setup");
-  const db=createAdminClient();
-  const {data}=await db.from("ai_actions").select("id,action_type,risk_level,status,summary,created_at,content_items(title)").order("created_at",{ascending:false}).limit(100);
-  return <><div className="admin-header"><div><h1>AI activity</h1><p className="muted">Every autonomous change is logged and risk-scored.</p></div></div><section className="panel"><table className="table"><thead><tr><th>Action</th><th>Content</th><th>Risk</th><th>Summary</th><th>Status</th><th></th></tr></thead><tbody>{data?.map((a:any)=><tr key={a.id}><td>{a.action_type}</td><td>{a.content_items?.title||"Site-wide"}</td><td><span className="status">{a.risk_level}</span></td><td>{a.summary}</td><td><span className={`status ${a.status}`}>{a.status}</span></td><td>{a.status==="pending_approval"&&<ApproveButton actionId={a.id}/>}</td></tr>)}</tbody></table></section></>;
-}
+import { redirect } from "next/navigation";import { backendUrl } from "@/lib/backend";export const dynamic="force-dynamic";export default function Page(){const b=backendUrl();if(!b)redirect('/setup');redirect(`${b}/admin/evolution`)}
