@@ -30,5 +30,14 @@ jobs:
           extensions: pdo_mysql, mbstring, openssl, tokenizer, xml, ctype, json, bcmath
           coverage: none
       - run: composer validate --no-check-publish
-      - run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Install Composer dependencies
+        run: |
+          set -o pipefail
+          composer install --no-interaction --prefer-dist --no-progress 2>&1 | tee composer-install.log
+      - name: Upload Composer log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: composer-install-log
+          path: backend/composer-install.log
       - run: find app config database routes -name '*.php' -print0 | xargs -0 -n1 php -l
