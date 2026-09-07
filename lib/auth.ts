@@ -1,11 +1,20 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { hasSupabasePublicConfig } from "@/lib/config";
 
 export async function requireAdmin() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
+  if (!hasSupabasePublicConfig()) redirect("/setup");
+
+  let supabase;
+  try {
+    supabase = await createClient();
+  } catch {
+    redirect("/setup?error=supabase");
+  }
+
+  const { data, error } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
-  if (!userId) redirect("/login");
+  if (error || !userId) redirect("/login");
 
   const { data: profile } = await supabase
     .from("profiles")
