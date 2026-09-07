@@ -9,6 +9,7 @@ use App\Http\Controllers\App\CustomerAuthController;
 use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\OnboardingController;
 use App\Http\Controllers\App\OpportunityController;
+use App\Http\Controllers\App\PasswordController;
 use App\Http\Controllers\App\SettingsController;
 use App\Http\Controllers\App\SiteController;
 use App\Http\Controllers\AuthController;
@@ -40,6 +41,10 @@ Route::middleware('guest')->group(function(){
     Route::post('/login',[CustomerAuthController::class,'login'])->middleware('throttle:10,1')->name('login.submit');
     Route::get('/register',[CustomerAuthController::class,'showRegister'])->name('register');
     Route::post('/register',[CustomerAuthController::class,'register'])->middleware('throttle:8,1')->name('register.submit');
+    Route::get('/forgot-password',[PasswordController::class,'forgot'])->name('password.request');
+    Route::post('/forgot-password',[PasswordController::class,'send'])->middleware('throttle:5,1')->name('password.email');
+    Route::get('/reset-password/{token}',[PasswordController::class,'resetForm'])->name('password.reset');
+    Route::post('/reset-password',[PasswordController::class,'reset'])->name('password.update');
 });
 Route::post('/logout',[CustomerAuthController::class,'logout'])->middleware('auth')->name('logout');
 
