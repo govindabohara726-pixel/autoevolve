@@ -5,24 +5,28 @@ namespace App\Services;
 use App\Models\AiAction;
 use App\Models\ContentItem;
 use App\Models\ContentVersion;
+use App\Models\Site;
 use Illuminate\Support\Str;
 
 class ContentEngine
 {
     public function __construct(private AiClient $ai) {}
 
-    public function generate(string $topic, string $type = 'guide'): ContentItem
+    public function generate(string $topic, string $type = 'guide', ?Site $site = null): ContentItem
     {
+        $siteContext = $site ? "Site: {$site->name}. Language: {$site->language}. Settings: ".json_encode($site->settings ?? []) : 'Site context not provided.';
         $data = $this->ai->json([
             ['role'=>'system','content'=>'You are AutoEvolve, an expert editorial and SEO system. Return JSON only. Never invent statistics, prices, claims, or sources. Write genuinely useful decision content.'],
-            ['role'=>'user','content'=>"Create a {$type} about: {$topic}. Return keys: title, excerpt, primary_keyword, search_intent, meta_title, meta_description, body. body must contain summary, intro, sections[{heading,body}], takeaways[], faq[{question,answer}], sources[]. Keep factual claims conservative and mark anything that needs external verification."],
+            ['role'=>'user','content'=>"{$siteContext}\nCreate a {$type} about: {$topic}. Return keys: title, excerpt, primary_keyword, search_intent, meta_title, meta_description, body. body must contain summary, intro, sections[{heading,body}], takeaways[], faq[{question,answer}], sources[]. Keep factual claims conservative and mark anything that needs external verification."],
         ]);
 
         $title = trim((string)($data['title'] ?? $topic));
-        $slug = $this->uniqueSlug($title);
+        $slug = $this->uniqueSlug($title, $site);
         [$health, $seo] = $this->scores($data);
 
         $item = ContentItem::create([
+            'workspace_id'=>$site?->workspace_id,
+            'site_id'=>$site?->id,
             'title'=>$title,
             'slug'=>$slug,
             'excerpt'=>$data['excerpt'] ?? null,
@@ -38,6 +42,8 @@ class ContentEngine
         ]);
 
         AiAction::create([
+            'workspace_id'=>$site?->workspace_id,
+            'site_id'=>$site?->id,
             'content_item_id'=>$item->id,
             'action_type'=>'generate',
             'risk_level'=>'low',
@@ -85,6 +91,8 @@ class ContentEngine
         $item->save();
 
         AiAction::create([
+            'workspace_id'=>$item->workspace_id,
+            'site_id'=>$item->site_id,
             'content_item_id'=>$item->id,
             'action_type'=>'improve',
             'risk_level'=>'medium',
@@ -96,11 +104,12 @@ class ContentEngine
         return $item->fresh();
     }
 
-    private function uniqueSlug(string $title): string
+    private function uniqueSlug(string $title, ?Site $site = null): string
     {
         $base = Str::slug($title) ?: 'article';
         $slug = $base; $i = 2;
-        while (ContentItem::where('slug', $slug)->exists()) $slug = $base.'-'.$i++;
+        $query = fn(string $candidate) => ContentItem::where('slug',$candidate)->when($site, fn($q)=>$q->where('site_id',$site->id));
+        while ($query($slug)->exists()) $slug = $base.'-'.$i++;
         return $slug;
     }
 
