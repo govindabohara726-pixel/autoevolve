@@ -60,7 +60,7 @@ jobs:
       - name: Laravel MySQL boot, migrations, routes, views and feature tests
         env:
           APP_ENV: testing
-          APP_KEY: base64:ZHVtbXktMzItYnl0ZS1hcHAta2V5LWZvci1jaQ==
+          APP_KEY: base64:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=
           APP_URL: http://localhost
           FRONTEND_URL: http://localhost
           DB_CONNECTION: mysql
