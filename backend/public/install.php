@@ -23,7 +23,10 @@ $requirements = [
     'OpenSSL' => extension_loaded('openssl'),
     'JSON' => extension_loaded('json'),
     'Tokenizer' => extension_loaded('tokenizer'),
+    'BCMath' => extension_loaded('bcmath'),
+    'XML' => extension_loaded('xml'),
     'Writable storage' => is_writable($base.'/storage'),
+    'Writable bootstrap/cache' => is_writable($base.'/bootstrap/cache'),
     'Writable project root (.env)' => is_writable($base),
     'Composer dependencies installed' => is_file($vendor),
 ];
@@ -41,6 +44,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installed) {
 
         $appUrl = rtrim((string)($_POST['app_url'] ?? ''), '/');
         if (!filter_var($appUrl, FILTER_VALIDATE_URL)) throw new RuntimeException('Enter a valid application URL including https://');
+        $frontendUrl = rtrim(trim((string)($_POST['frontend_url'] ?? '')), '/') ?: $appUrl;
+        if (!filter_var($frontendUrl, FILTER_VALIDATE_URL)) throw new RuntimeException('Enter a valid external frontend URL, or leave it blank.');
 
         $dbHost = trim((string)($_POST['db_host'] ?? 'localhost'));
         $dbPort = (int)($_POST['db_port'] ?? 3306);
@@ -48,6 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installed) {
         $dbUser = trim((string)($_POST['db_username'] ?? ''));
         $dbPass = (string)($_POST['db_password'] ?? '');
         if ($dbName === '' || $dbUser === '') throw new RuntimeException('Database name and username are required.');
+        if ($dbPort < 1 || $dbPort > 65535) throw new RuntimeException('Enter a valid MySQL port.');
 
         $adminName = trim((string)($_POST['admin_name'] ?? ''));
         $adminEmail = strtolower(trim((string)($_POST['admin_email'] ?? '')));
@@ -68,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installed) {
             'APP_KEY='.envQuote($appKey),
             'APP_DEBUG=false',
             'APP_URL='.envQuote($appUrl),
-            'FRONTEND_URL='.envQuote((string)($_POST['frontend_url'] ?? $appUrl)),
+            'FRONTEND_URL='.envQuote($frontendUrl),
             '',
             'LOG_CHANNEL=stack',
             'LOG_LEVEL=warning',
@@ -111,6 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installed) {
         $app = require $base.'/bootstrap/app.php';
         $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
         $kernel->bootstrap();
+        Illuminate\Support\Facades\Artisan::call('optimize:clear');
         $exit = Illuminate\Support\Facades\Artisan::call('migrate', ['--force'=>true]);
         if ($exit !== 0) throw new RuntimeException('Database migration failed: '.Illuminate\Support\Facades\Artisan::output());
 
@@ -118,6 +125,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installed) {
             ['email'=>$adminEmail],
             ['name'=>$adminName,'password'=>$adminPassword,'is_admin'=>true]
         );
+
+        Illuminate\Support\Facades\Artisan::call('config:cache');
+        Illuminate\Support\Facades\Artisan::call('view:cache');
 
         if (!is_dir(dirname($lock))) mkdir(dirname($lock), 0755, true);
         file_put_contents($lock, json_encode(['installed_at'=>date(DATE_ATOM),'version'=>'1.0.0'], JSON_PRETTY_PRINT), LOCK_EX);
