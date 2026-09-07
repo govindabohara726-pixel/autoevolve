@@ -25,7 +25,7 @@ class PublicSiteController extends Controller
 
     public function customDomainArticle(Request $request, string $slug)
     {
-        $site = $this->siteForHost($request->getHost());
+        $site = $this->siteForRequest($request);
         $item = ContentItem::where('site_id', $site->id)->where('status', 'published')->where('slug', $slug)->firstOrFail();
         return view('public.article', compact('site', 'item'));
     }
@@ -39,7 +39,7 @@ class PublicSiteController extends Controller
 
     public function customDomainSitemap(Request $request)
     {
-        $site = Site::where('domain', strtolower($request->getHost()))->where('status','active')->first();
+        $site = Site::where('domain', $this->requestHost($request))->where('status','active')->first();
         if ($site) {
             $items = $site->content()->where('status','published')->orderByDesc('updated_at')->get(['slug','updated_at']);
             return response()->view('public.sitemap', compact('site','items'))->header('Content-Type','application/xml');
@@ -56,7 +56,7 @@ class PublicSiteController extends Controller
 
     public function robots(Request $request)
     {
-        $host = strtolower($request->getHost());
+        $host = $this->requestHost($request);
         $site = Site::where('domain',$host)->where('status','active')->first();
         $sitemap = $site ? $request->getSchemeAndHttpHost().'/sitemap.xml' : rtrim(config('app.url'),'/').'/sitemap.xml';
         return response("User-agent: *\nAllow: /\nSitemap: {$sitemap}\n",200,['Content-Type'=>'text/plain']);
@@ -67,8 +67,14 @@ class PublicSiteController extends Controller
         abort_unless($site->workspace_id === $workspace->id && $site->status === 'active', 404);
     }
 
-    private function siteForHost(string $host): Site
+    private function siteForRequest(Request $request): Site
     {
-        return Site::where('domain', strtolower($host))->where('status', 'active')->firstOrFail();
+        return Site::where('domain', $this->requestHost($request))->where('status', 'active')->firstOrFail();
+    }
+
+    private function requestHost(Request $request): string
+    {
+        $host = strtolower(trim((string) $request->header('host', $request->getHost())));
+        return preg_replace('/:\d+$/', '', $host) ?: $host;
     }
 }
