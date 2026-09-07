@@ -1,0 +1,53 @@
+name: Build cPanel Package
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_mysql, mbstring, openssl, tokenizer, xml, ctype, json, bcmath
+          coverage: none
+
+      - name: Validate Composer manifest
+        working-directory: backend
+        run: composer validate --no-check-publish
+
+      - name: Install production dependencies
+        working-directory: backend
+        run: composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
+
+      - name: Prepare package
+        run: |
+          mkdir -p dist/autoevolve
+          rsync -a backend/ dist/autoevolve/ \
+            --exclude='.env' \
+            --exclude='composer-install.log' \
+            --exclude='storage/logs/*'
+          mkdir -p dist/autoevolve/storage/logs
+          mkdir -p dist/autoevolve/storage/framework/cache/data
+          mkdir -p dist/autoevolve/storage/framework/sessions
+          mkdir -p dist/autoevolve/storage/framework/views
+          touch dist/autoevolve/storage/logs/.gitkeep
+          find dist/autoevolve -type d -exec chmod 755 {} \;
+          find dist/autoevolve -type f -exec chmod 644 {} \;
+          chmod 755 dist/autoevolve/artisan
+          cd dist
+          zip -qr autoevolve-cpanel.zip autoevolve
+
+      - name: Upload cPanel package
+        uses: actions/upload-artifact@v4
+        with:
+          name: autoevolve-cpanel
+          path: dist/autoevolve-cpanel.zip
+          if-no-files-found: error
+          retention-days: 30

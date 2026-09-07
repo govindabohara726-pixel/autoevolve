@@ -17,4 +17,8 @@ class User extends Authenticatable
     {
         return ['email_verified_at' => 'datetime', 'password' => 'hashed', 'is_admin' => 'boolean'];
     }
+
+    public function ownedWorkspaces(){ return $this->hasMany(Workspace::class,'owner_id'); }
+    public function memberships(){ return $this->hasMany(Membership::class); }
+    public function workspaces(){ return $this->belongsToMany(Workspace::class,'memberships')->withPivot('role','accepted_at')->withTimestamps(); }
 }

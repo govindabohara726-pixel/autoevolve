@@ -1,0 +1,6 @@
+@extends('layouts.app')
+@section('title','Activity')
+@section('content')
+<div class="page-head"><div><span class="eyebrow">AUDIT LOG</span><h1>Activity</h1><p>Workspace-level history for important user, content, billing and automation actions.</p></div></div>
+<section class="panel"><div class="panel-head"><h2>Audit trail</h2><span class="pill">{{ $logs->total() }} events</span></div><div class="table-wrap"><table><thead><tr><th>Action</th><th>User</th><th>Target</th><th>IP</th><th>When</th></tr></thead><tbody>@forelse($logs as $log)<tr><td><strong>{{ str_replace('.',' · ',str_replace('_',' ',ucfirst($log->action))) }}</strong></td><td>{{ $log->user?->name ?: 'System' }}<div class="muted">{{ $log->user?->email }}</div></td><td>{{ $log->target_type ?: '—' }}@if($log->target_id)<div class="muted">{{ \Illuminate\Support\Str::limit($log->target_id,24) }}</div>@endif</td><td>{{ $log->ip_address ?: '—' }}</td><td>{{ $log->created_at?->diffForHumans() }}</td></tr>@empty<tr><td colspan="5"><div class="empty">No activity recorded yet.</div></td></tr>@endforelse</tbody></table></div><div class="pagination">{{ $logs->links() }}</div></section>
+@endsection
