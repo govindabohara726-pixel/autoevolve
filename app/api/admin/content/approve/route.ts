@@ -1,0 +1,4 @@
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
+export async function POST(req:Request){try{await requireAdmin();const {actionId}=await req.json();const db=createAdminClient();const {data:action,error}=await db.from("ai_actions").select("id,content_id,status").eq("id",actionId).single();if(error||!action)return NextResponse.json({error:"Action not found"},{status:404});if(!action.content_id)return NextResponse.json({error:"Action has no content"},{status:400});await db.from("content_items").update({status:"published",published_at:new Date().toISOString()}).eq("id",action.content_id);await db.from("ai_actions").update({status:"completed",approved_at:new Date().toISOString()}).eq("id",actionId);return NextResponse.json({ok:true})}catch(e){return NextResponse.json({error:e instanceof Error?e.message:"Failed"},{status:500})}}
